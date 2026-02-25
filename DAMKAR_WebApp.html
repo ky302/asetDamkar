@@ -1,0 +1,1204 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DAMKAR - Sistem Pelaporan Aset</title>
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Barlow:wght@300;400;500;600&family=Barlow+Condensed:wght@600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0b;
+    --surface: #111113;
+    --surface2: #1a1a1e;
+    --border: rgba(255,255,255,0.07);
+    --text: #e8e8ec;
+    --muted: #6b6b78;
+    --accent-orange: #ff5722;
+    --accent-orange-glow: rgba(255,87,34,0.3);
+    --success: #22c55e;
+    --font-display: 'Rajdhani', sans-serif;
+    --font-body: 'Barlow', sans-serif;
+    --font-label: 'Barlow Condensed', sans-serif;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: var(--bg); color: var(--text); font-family: var(--font-body); min-height: 100vh; overflow-x: hidden; }
+
+  /* BG */
+  .bg-grid { position: fixed; inset: 0; pointer-events: none; z-index: 0;
+    background-image: linear-gradient(rgba(255,87,34,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255,87,34,0.03) 1px, transparent 1px);
+    background-size: 48px 48px; }
+  .bg-radial { position: fixed; inset: 0; pointer-events: none; z-index: 0;
+    background: radial-gradient(ellipse 60% 50% at 50% 0%, rgba(255,87,34,0.08) 0%, transparent 70%); }
+
+  /* SCREENS */
+  .screen { display: none; position: relative; z-index: 1; }
+  .screen.active { display: block; }
+
+  /* HOME */
+  #home { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 2rem; animation: fadeIn 0.5s ease; }
+  .brand { text-align: center; margin-bottom: 3rem; }
+  .brand-icon { width: 80px; height: 80px; background: linear-gradient(135deg, #ff6b35, var(--accent-orange)); border-radius: 20px; display: flex; align-items: center; justify-content: center; font-size: 2.2rem; margin: 0 auto 1rem; box-shadow: 0 0 40px var(--accent-orange-glow); position: relative; }
+  .brand-icon::after { content: ''; position: absolute; inset: -2px; border-radius: 22px; border: 1px solid rgba(255,87,34,0.4); }
+  .brand-name { font-family: var(--font-display); font-size: 2.8rem; font-weight: 700; letter-spacing: 0.15em; color: #fff; }
+  .brand-sub { font-family: var(--font-label); font-size: 0.8rem; letter-spacing: 0.25em; color: var(--muted); margin-top: 0.25rem; }
+  .clock-wrap { text-align: center; margin-bottom: 3.5rem; }
+  #clock { font-family: 'Rajdhani', monospace; font-size: 3.5rem; font-weight: 700; letter-spacing: 0.05em; color: #fff; line-height: 1; text-shadow: 0 0 30px rgba(255,87,34,0.4); }
+  #date-display { font-size: 0.85rem; color: var(--muted); margin-top: 0.5rem; letter-spacing: 0.05em; }
+  .nav-cards { display: flex; flex-direction: column; gap: 0.75rem; width: 100%; max-width: 520px; }
+  .nav-card { display: flex; align-items: center; gap: 1rem; padding: 1.1rem 1.4rem; border-radius: 14px; border: 1px solid var(--border); cursor: pointer; transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s; color: inherit; position: relative; overflow: hidden; }
+  .nav-card:hover { transform: translateX(4px); }
+  .nav-card.purple { background: linear-gradient(135deg, #2d1a6e 0%, #1a1040 100%); }
+  .nav-card.purple:hover { border-color: rgba(108,53,222,0.5); box-shadow: 0 8px 30px rgba(108,53,222,0.2); }
+  .nav-card.red { background: linear-gradient(135deg, #5a1a1a 0%, #2d0d0d 100%); }
+  .nav-card.red:hover { border-color: rgba(192,57,43,0.5); box-shadow: 0 8px 30px rgba(192,57,43,0.2); }
+  .nav-card.teal { background: linear-gradient(135deg, #0a3535 0%, #051e1e 100%); }
+  .nav-card.teal:hover { border-color: rgba(13,115,119,0.5); box-shadow: 0 8px 30px rgba(13,115,119,0.2); }
+  .nav-card.orange { background: linear-gradient(135deg, #ff5722, #e64a19); border-color: transparent; box-shadow: 0 4px 20px var(--accent-orange-glow); }
+  .nav-card.orange:hover { box-shadow: 0 8px 35px rgba(255,87,34,0.5); transform: translateX(4px) translateY(-1px); }
+  .nav-icon { width: 42px; height: 42px; background: rgba(255,255,255,0.1); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; flex-shrink: 0; }
+  .nav-info { flex: 1; }
+  .nav-title { font-family: var(--font-label); font-size: 1rem; font-weight: 700; letter-spacing: 0.05em; color: #fff; }
+  .nav-card.orange .nav-title { font-size: 1.05rem; text-transform: uppercase; }
+  .nav-desc { font-size: 0.78rem; color: rgba(255,255,255,0.55); margin-top: 0.1rem; }
+  .nav-card.orange .nav-desc { color: rgba(255,255,255,0.8); }
+  .nav-arrow { color: rgba(255,255,255,0.4); font-size: 1.1rem; }
+  .status-bar { margin-top: 2.5rem; display: flex; align-items: center; gap: 0.5rem; font-size: 0.75rem; color: var(--muted); font-family: var(--font-label); letter-spacing: 0.05em; }
+  .status-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--success); box-shadow: 0 0 8px var(--success); animation: pulse 2s infinite; }
+
+  /* FORMS */
+  .form-screen { min-height: 100vh; padding: 2rem 1rem; animation: slideIn 0.35s ease; }
+  .form-header { max-width: 600px; margin: 0 auto 2rem; display: flex; align-items: center; gap: 1rem; }
+  .back-btn { width: 40px; height: 40px; border-radius: 10px; background: var(--surface2); border: 1px solid var(--border); color: var(--text); font-size: 1.1rem; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background 0.2s; flex-shrink: 0; }
+  .back-btn:hover { background: var(--surface); }
+  .form-title { font-family: var(--font-display); font-size: 1.6rem; font-weight: 700; }
+  .form-subtitle { font-size: 0.8rem; color: var(--muted); margin-top: 0.15rem; }
+  .form-card { max-width: 600px; margin: 0 auto; background: var(--surface); border: 1px solid var(--border); border-radius: 18px; padding: 2rem; }
+  .form-group { margin-bottom: 1.25rem; }
+  label { display: block; font-family: var(--font-label); font-size: 0.8rem; font-weight: 600; letter-spacing: 0.08em; color: var(--muted); margin-bottom: 0.4rem; text-transform: uppercase; }
+  label span.req { color: var(--accent-orange); }
+  input, select, textarea { width: 100%; background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 0.75rem 1rem; color: var(--text); font-family: var(--font-body); font-size: 0.9rem; outline: none; transition: border-color 0.2s, box-shadow 0.2s; appearance: none; }
+  input:focus, select:focus, textarea:focus { border-color: var(--accent-orange); box-shadow: 0 0 0 3px var(--accent-orange-glow); }
+  select { cursor: pointer; }
+  textarea { resize: vertical; min-height: 90px; }
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+  .file-upload { border: 2px dashed var(--border); border-radius: 10px; padding: 1.5rem; text-align: center; cursor: pointer; transition: border-color 0.2s; }
+  .file-upload:hover { border-color: var(--accent-orange); }
+  .file-upload input { display: none; }
+  .file-upload-text { font-size: 0.85rem; color: var(--muted); margin-top: 0.5rem; }
+  .file-preview { max-height: 120px; border-radius: 8px; margin-top: 0.75rem; display: none; }
+  .submit-btn { width: 100%; padding: 0.9rem; background: linear-gradient(135deg, #ff5722, #e64a19); border: none; border-radius: 12px; color: #fff; font-family: var(--font-label); font-size: 1rem; font-weight: 700; letter-spacing: 0.1em; cursor: pointer; margin-top: 1.5rem; transition: box-shadow 0.2s, transform 0.1s; box-shadow: 0 4px 20px var(--accent-orange-glow); }
+  .submit-btn:hover { box-shadow: 0 6px 30px rgba(255,87,34,0.5); transform: translateY(-1px); }
+  .submit-btn:active { transform: translateY(0); }
+  .submit-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+  .divider { height: 1px; background: var(--border); margin: 1.5rem 0; }
+  .section-tag { font-family: var(--font-label); font-size: 0.7rem; letter-spacing: 0.15em; color: var(--accent-orange); text-transform: uppercase; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem; }
+  .section-tag::after { content:''; flex:1; height:1px; background:var(--border); }
+
+  /* STATS SCREEN */
+  #stats-screen { min-height: 100vh; padding: 1.5rem 1rem 3rem; animation: slideIn 0.35s ease; }
+
+  .stats-header {
+    max-width: 960px; margin: 0 auto 1.5rem;
+    display: flex; align-items: flex-start; gap: 0.75rem; flex-wrap: wrap;
+  }
+  .stats-header-left { display: flex; align-items: center; gap: 0.75rem; flex: 1; min-width: 0; }
+  .stats-header-right { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; margin-left: auto; }
+
+  .stats-actions { display: flex; gap: 0.4rem; flex-wrap: wrap; }
+  .btn-outline { padding: 0.5rem 0.85rem; border-radius: 9px; border: 1px solid var(--border); background: var(--surface2); color: var(--text); font-family: var(--font-label); font-size: 0.78rem; font-weight: 600; letter-spacing: 0.04em; cursor: pointer; transition: background 0.2s, border-color 0.2s; display: flex; align-items: center; gap: 0.35rem; white-space: nowrap; }
+  .btn-outline:hover { background: var(--surface); border-color: rgba(255,255,255,0.15); }
+
+  /* CONN STATUS */
+  #conn-status { font-size: 0.72rem; font-family: var(--font-label); letter-spacing: 0.05em; display: flex; align-items: center; gap: 0.4rem; padding: 0.35rem 0.7rem; border-radius: 8px; background: var(--surface2); border: 1px solid var(--border); white-space: nowrap; }
+  #conn-dot { width: 7px; height: 7px; border-radius: 50%; background: #6b6b78; display: inline-block; flex-shrink: 0; }
+
+  /* SUMMARY CARDS */
+  .stats-summary { max-width: 960px; margin: 0 auto 1.5rem; display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.75rem; }
+  .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 1rem 1.1rem; transition: border-color 0.2s; }
+  .stat-card:hover { border-color: rgba(255,87,34,0.3); }
+  .stat-label { font-family: var(--font-label); font-size: 0.68rem; letter-spacing: 0.1em; color: var(--muted); text-transform: uppercase; line-height: 1.3; }
+  .stat-value { font-family: var(--font-display); font-size: 1.9rem; font-weight: 700; color: #fff; margin-top: 0.2rem; }
+  .stat-badge { display: inline-block; padding: 0.12rem 0.45rem; border-radius: 20px; font-size: 0.64rem; font-family: var(--font-label); font-weight: 600; margin-top: 0.2rem; }
+  .badge-orange { background: rgba(255,87,34,0.15); color: var(--accent-orange); }
+  .badge-green { background: rgba(34,197,94,0.15); color: var(--success); }
+
+  /* TABS */
+  .tabs { max-width: 960px; margin: 0 auto 1rem; display: flex; gap: 0; border-bottom: 1px solid var(--border); overflow-x: auto; scrollbar-width: none; }
+  .tabs::-webkit-scrollbar { display: none; }
+  .tab-btn { padding: 0.6rem 1.1rem; background: none; border: none; color: var(--muted); font-family: var(--font-label); font-size: 0.82rem; font-weight: 600; letter-spacing: 0.05em; cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; transition: color 0.2s, border-color 0.2s; white-space: nowrap; }
+  .tab-btn.active { color: var(--accent-orange); border-color: var(--accent-orange); }
+
+  /* TABLE CONTAINER */
+  .table-section { max-width: 960px; margin: 0 auto; }
+
+  /* SEARCH & FILTER BAR */
+  .table-toolbar {
+    display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.75rem; flex-wrap: wrap;
+  }
+  .search-wrap { position: relative; flex: 1; min-width: 160px; max-width: 300px; }
+  .search-wrap input { padding: 0.55rem 0.9rem 0.55rem 2.2rem; font-size: 0.82rem; border-radius: 9px; }
+  .search-icon { position: absolute; left: 0.7rem; top: 50%; transform: translateY(-50%); font-size: 0.85rem; color: var(--muted); pointer-events: none; }
+  .table-info { font-family: var(--font-label); font-size: 0.75rem; color: var(--muted); margin-left: auto; white-space: nowrap; }
+
+  /* TABLE */
+  .data-table-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; overflow: hidden; }
+  .table-scroll { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; }
+  thead tr { border-bottom: 1px solid var(--border); }
+  th { padding: 0.8rem 0.9rem; text-align: left; font-family: var(--font-label); font-size: 0.7rem; letter-spacing: 0.1em; color: var(--muted); text-transform: uppercase; white-space: nowrap; user-select: none; }
+  td { padding: 0.75rem 0.9rem; font-size: 0.82rem; border-bottom: 1px solid rgba(255,255,255,0.035); vertical-align: middle; }
+  tr:last-child td { border-bottom: none; }
+  tbody tr:hover td { background: rgba(255,255,255,0.025); }
+
+  /* MOBILE TABLE: card view */
+  .mobile-card { display: none; }
+  .mob-row { background: var(--surface2); border: 1px solid var(--border); border-radius: 12px; padding: 0.85rem 1rem; margin-bottom: 0.6rem; }
+  .mob-row-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.5rem; }
+  .mob-no { font-family: var(--font-label); font-size: 0.7rem; color: var(--muted); }
+  .mob-title { font-weight: 600; font-size: 0.88rem; color: #fff; }
+  .mob-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.35rem 0.75rem; }
+  .mob-item label { font-family: var(--font-label); font-size: 0.64rem; letter-spacing: 0.08em; color: var(--muted); text-transform: uppercase; margin-bottom: 0; }
+  .mob-item span { font-size: 0.8rem; color: var(--text); display: block; }
+
+  /* BADGES */
+  .badge { display: inline-block; padding: 0.18rem 0.55rem; border-radius: 20px; font-size: 0.67rem; font-family: var(--font-label); font-weight: 600; letter-spacing: 0.04em; }
+  .badge-rusak { background: rgba(192,57,43,0.2); color: #e74c3c; }
+  .badge-hilang { background: rgba(255,165,0,0.2); color: orange; }
+  .badge-baru { background: rgba(34,197,94,0.15); color: var(--success); }
+  .badge-kembali { background: rgba(108,53,222,0.2); color: #a78bfa; }
+  .badge-dipinjam { background: rgba(13,115,119,0.2); color: #14b8a6; }
+
+  /* EMPTY STATE */
+  .empty-state { padding: 2.5rem; text-align: center; color: var(--muted); }
+  .empty-state .icon { font-size: 2rem; margin-bottom: 0.6rem; }
+  .empty-state p { font-size: 0.82rem; }
+
+  /* ═══ PAGINATION ═══ */
+  .pagination {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0.8rem 1rem;
+    border-top: 1px solid var(--border);
+    flex-wrap: wrap; gap: 0.5rem;
+  }
+  .page-info { font-family: var(--font-label); font-size: 0.72rem; color: var(--muted); }
+  .page-controls { display: flex; align-items: center; gap: 0.3rem; }
+  .page-btn {
+    width: 32px; height: 32px; border-radius: 8px;
+    border: 1px solid var(--border); background: var(--surface2);
+    color: var(--text); font-family: var(--font-label); font-size: 0.78rem; font-weight: 600;
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
+    flex-shrink: 0;
+  }
+  .page-btn:hover:not(:disabled) { background: var(--surface); border-color: rgba(255,255,255,0.15); }
+  .page-btn.active { background: var(--accent-orange); border-color: var(--accent-orange); color: #fff; }
+  .page-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+  .page-btn.nav { font-size: 1rem; }
+  .page-ellipsis { color: var(--muted); font-size: 0.78rem; padding: 0 0.2rem; font-family: var(--font-label); }
+
+  /* TOAST */
+  .toast { position: fixed; bottom: 2rem; left: 50%; transform: translateX(-50%) translateY(100px); background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 1rem 1.5rem; display: flex; align-items: center; gap: 0.75rem; box-shadow: 0 8px 30px rgba(0,0,0,0.5); z-index: 9999; transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); min-width: 260px; max-width: 90vw; }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+  .toast.success { border-color: rgba(34,197,94,0.3); }
+  .toast.error { border-color: rgba(239,68,68,0.3); }
+  .toast-icon { font-size: 1.2rem; }
+  .toast-msg { font-size: 0.85rem; }
+
+  /* LOADING */
+  .loading-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); display: none; align-items: center; justify-content: center; z-index: 9998; backdrop-filter: blur(4px); }
+  .loading-overlay.show { display: flex; }
+  .spinner { width: 44px; height: 44px; border: 3px solid var(--border); border-top-color: var(--accent-orange); border-radius: 50%; animation: spin 0.8s linear infinite; }
+
+  /* ANIMATIONS */
+  @keyframes fadeIn { from { opacity:0; transform:scale(0.98); } to { opacity:1; transform:scale(1); } }
+  @keyframes slideIn { from { opacity:0; transform:translateX(16px); } to { opacity:1; transform:translateX(0); } }
+  @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.4; } }
+  @keyframes spin { to { transform:rotate(360deg); } }
+
+  /* ═══ RESPONSIVE ═══ */
+  @media (max-width: 768px) {
+    /* Home */
+    #clock { font-size: 2.8rem; }
+    .brand-name { font-size: 2.2rem; }
+
+    /* Form */
+    .form-row { grid-template-columns: 1fr; }
+    .form-card { padding: 1.25rem; border-radius: 14px; }
+    .form-title { font-size: 1.3rem; }
+
+    /* Stats header */
+    .stats-header { flex-direction: column; gap: 0.6rem; }
+    .stats-header-left { width: 100%; }
+    .stats-header-right { width: 100%; justify-content: space-between; }
+    .stats-actions { flex: 1; }
+    .btn-outline { padding: 0.45rem 0.7rem; font-size: 0.73rem; }
+
+    /* Summary cards: 2 kolom di tablet */
+    .stats-summary { grid-template-columns: repeat(2, 1fr); }
+
+    /* Table: ganti ke card view di mobile */
+    .desktop-table { display: none !important; }
+    .mobile-card { display: block !important; }
+
+    /* Table toolbar */
+    .table-toolbar { flex-direction: column; align-items: stretch; }
+    .search-wrap { max-width: 100%; }
+    .table-info { margin-left: 0; }
+
+    /* Pagination */
+    .pagination { flex-direction: column; align-items: center; gap: 0.5rem; }
+  }
+
+  @media (max-width: 480px) {
+    #clock { font-size: 2.2rem; }
+    .brand-name { font-size: 1.8rem; }
+    .brand-icon { width: 64px; height: 64px; font-size: 1.8rem; }
+    .nav-card { padding: 0.9rem 1rem; }
+    .stats-summary { grid-template-columns: repeat(2, 1fr); gap: 0.5rem; }
+    .stat-value { font-size: 1.6rem; }
+    #stats-screen { padding: 1rem 0.75rem 3rem; }
+    .form-screen { padding: 1.25rem 0.75rem; }
+  }
+
+  @media (max-width: 360px) {
+    .stats-actions .btn-outline span { display: none; }
+  }
+</style>
+</head>
+<body>
+<div class="bg-grid"></div>
+<div class="bg-radial"></div>
+
+<!-- ===== HOME ===== -->
+<div id="home" class="screen active">
+  <div class="brand">
+    <div class="brand-icon">🚒</div>
+    <div class="brand-name">DAMKAR</div>
+    <div class="brand-sub">SISTEM PELAPORAN ASET</div>
+  </div>
+  <div class="clock-wrap">
+    <div id="clock">--:--:--</div>
+    <div id="date-display">--</div>
+  </div>
+  <div class="nav-cards">
+    <div class="nav-card purple" onclick="showScreen('form-pendaftaran')">
+      <div class="nav-icon">📋</div>
+      <div class="nav-info">
+        <div class="nav-title">Pendaftaran Peralatan Baru</div>
+        <div class="nav-desc">Daftarkan peralatan yang masuk ke posko</div>
+      </div>
+      <div class="nav-arrow">›</div>
+    </div>
+    <div class="nav-card red" onclick="showScreen('form-kerusakan')">
+      <div class="nav-icon">🔧</div>
+      <div class="nav-info">
+        <div class="nav-title">Laporan Kerusakan / Peminjaman</div>
+        <div class="nav-desc">Laporkan peralatan rusak, hilang, atau peminjaman</div>
+      </div>
+      <div class="nav-arrow">›</div>
+    </div>
+    <div class="nav-card teal" onclick="showScreen('form-pengembalian')">
+      <div class="nav-icon">🔄</div>
+      <div class="nav-info">
+        <div class="nav-title">Pengembalian Aset Posko</div>
+        <div class="nav-desc">Laporkan pengembalian aset antar posko</div>
+      </div>
+      <div class="nav-arrow">›</div>
+    </div>
+    <div class="nav-card orange" onclick="showScreen('stats-screen')">
+      <div class="nav-icon">📊</div>
+      <div class="nav-info">
+        <div class="nav-title">Lihat Statistik Lengkap</div>
+        <div class="nav-desc">Data real-time · Export Excel & PDF</div>
+      </div>
+      <div class="nav-arrow">›</div>
+    </div>
+  </div>
+  <div class="status-bar">
+    <div class="status-dot"></div>
+    Sistem Online &nbsp;·&nbsp; Dinas Pemadam Kebakaran Kota Luwu Timur
+  </div>
+</div>
+
+<!-- ===== FORM: KERUSAKAN ===== -->
+<div id="form-kerusakan" class="screen">
+  <div class="form-screen">
+    <div class="form-header">
+      <button class="back-btn" onclick="showScreen('home')">‹</button>
+      <div>
+        <div class="form-title">🔧 Laporan Kerusakan / Peminjaman</div>
+        <div class="form-subtitle">Laporkan peralatan rusak, hilang, atau peminjaman antar posko</div>
+      </div>
+    </div>
+    <div class="form-card">
+      <div class="section-tag">Informasi Pelaporan</div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Tanggal Laporan <span class="req">*</span></label>
+          <input type="date" id="k-tanggal">
+        </div>
+        <div class="form-group">
+          <label>Waktu Laporan <span class="req">*</span></label>
+          <input type="time" id="k-waktu">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Nama Posko <span class="req">*</span></label>
+          <select id="k-posko">
+            <option value="">-- Pilih Posko --</option>
+            <option>Mako</option><option>Kalaena</option><option>Angkona</option><option>Tomoni</option>
+            <option>Wasuponda</option><option>Baruga</option><option>Burau</option><option>Wotu</option>
+            <option>Tomoni Timur</option><option>Towuti</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Nama Pelapor <span class="req">*</span></label>
+          <input type="text" id="k-pelapor" placeholder="Nama lengkap">
+        </div>
+      </div>
+      <div class="divider"></div>
+      <div class="section-tag">Detail Peralatan</div>
+      <div class="form-group">
+        <label>Nama Peralatan <span class="req">*</span></label>
+        <input type="text" id="k-peralatan" placeholder="Contoh: Selang Pemadam, HT, APAR...">
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Status Aset <span class="req">*</span></label>
+          <select id="k-status">
+            <option value="">-- Pilih Status --</option>
+            <option>RUSAK</option><option>HILANG</option><option>DIPINJAM</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Jumlah Barang <span class="req">*</span></label>
+          <input type="number" id="k-jumlah" min="1" placeholder="0">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Tingkat Kerusakan</label>
+        <select id="k-tingkat">
+          <option value="">-- Pilih Tingkat (jika rusak) --</option>
+          <option>Ringan</option><option>Sedang</option><option>Berat</option><option>Rusak Total</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Deskripsi Kejadian <span class="req">*</span></label>
+        <textarea id="k-deskripsi" placeholder="Jelaskan kronologi kejadian atau kondisi kerusakan..."></textarea>
+      </div>
+      <div class="form-group">
+        <label>Tindakan Sementara</label>
+        <textarea id="k-tindakan" placeholder="Tindakan yang sudah/akan dilakukan..." style="min-height:70px"></textarea>
+      </div>
+      <div class="form-group">
+        <label>Bukti Pelaporan (Foto)</label>
+        <div class="file-upload" onclick="document.getElementById('k-foto').click()">
+          <div style="font-size:1.8rem">📷</div>
+          <div class="file-upload-text">Klik untuk upload foto bukti</div>
+          <div class="file-upload-text" style="font-size:0.72rem">(Foto barang rusak / lokasi hilang)</div>
+          <input type="file" id="k-foto" accept="image/*" onchange="previewImg(this,'k-preview')">
+          <img id="k-preview" class="file-preview">
+        </div>
+      </div>
+      <button class="submit-btn" onclick="submitForm('kerusakan')">⚡ KIRIM LAPORAN</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== FORM: PENGEMBALIAN ===== -->
+<div id="form-pengembalian" class="screen">
+  <div class="form-screen">
+    <div class="form-header">
+      <button class="back-btn" onclick="showScreen('home')">‹</button>
+      <div>
+        <div class="form-title">🔄 Pengembalian Aset Posko</div>
+        <div class="form-subtitle">Laporkan pengembalian aset antar posko</div>
+      </div>
+    </div>
+    <div class="form-card">
+      <div class="section-tag">Informasi Pengembalian</div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Tanggal Pengembalian <span class="req">*</span></label>
+          <input type="date" id="p-tanggal">
+        </div>
+        <div class="form-group">
+          <label>Waktu Pengembalian <span class="req">*</span></label>
+          <input type="time" id="p-waktu">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Petugas yang Melaporkan <span class="req">*</span></label>
+          <input type="text" id="p-petugas-lapor" placeholder="Nama lengkap">
+        </div>
+        <div class="form-group">
+          <label>Petugas yang Menerima <span class="req">*</span></label>
+          <input type="text" id="p-petugas-terima" placeholder="Nama lengkap">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Posko Peminjam <span class="req">*</span></label>
+          <select id="p-posko-pinjam">
+            <option value="">-- Asal Peminjam --</option>
+            <option>Mako</option><option>Kalaena</option><option>Angkona</option><option>Tomoni</option>
+            <option>Wasuponda</option><option>Baruga</option><option>Burau</option><option>Wotu</option>
+            <option>Tomoni Timur</option><option>Towuti</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Posko Asal Pemilik Aset <span class="req">*</span></label>
+          <select id="p-posko-asal">
+            <option value="">-- Posko Tujuan --</option>
+            <option>Mako</option><option>Kalaena</option><option>Angkona</option><option>Tomoni</option>
+            <option>Wasuponda</option><option>Baruga</option><option>Burau</option><option>Wotu</option>
+            <option>Tomoni Timur</option><option>Towuti</option>
+          </select>
+        </div>
+      </div>
+      <div class="divider"></div>
+      <div class="section-tag">Detail Barang</div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Nama Peralatan <span class="req">*</span></label>
+          <input type="text" id="p-peralatan" placeholder="Nama barang">
+        </div>
+        <div class="form-group">
+          <label>Jumlah Barang <span class="req">*</span></label>
+          <input type="number" id="p-jumlah" min="1" placeholder="0">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Kondisi Barang saat Dikembalikan <span class="req">*</span></label>
+        <select id="p-kondisi">
+          <option value="">-- Pilih Kondisi --</option>
+          <option>Baik / Normal</option><option>Rusak Ringan</option>
+          <option>Rusak Sedang</option><option>Rusak Berat</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Bukti Pelaporan (Foto)</label>
+        <div class="file-upload" onclick="document.getElementById('p-foto').click()">
+          <div style="font-size:1.8rem">📷</div>
+          <div class="file-upload-text">Klik untuk upload foto bukti</div>
+          <div class="file-upload-text" style="font-size:0.72rem">(Foto barang yang dikembalikan)</div>
+          <input type="file" id="p-foto" accept="image/*" onchange="previewImg(this,'p-preview')">
+          <img id="p-preview" class="file-preview">
+        </div>
+      </div>
+      <button class="submit-btn" onclick="submitForm('pengembalian')">⚡ KIRIM LAPORAN</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== FORM: PENDAFTARAN ===== -->
+<div id="form-pendaftaran" class="screen">
+  <div class="form-screen">
+    <div class="form-header">
+      <button class="back-btn" onclick="showScreen('home')">‹</button>
+      <div>
+        <div class="form-title">📋 Pendaftaran Peralatan Baru</div>
+        <div class="form-subtitle">Daftarkan peralatan baru yang masuk ke posko</div>
+      </div>
+    </div>
+    <div class="form-card">
+      <div class="section-tag">Informasi Posko</div>
+      <div class="form-group">
+        <label>Nama Posko <span class="req">*</span></label>
+        <select id="b-posko">
+          <option value="">-- Pilih Posko (Total 10 Posko) --</option>
+          <option>Mako</option><option>Kalaena</option><option>Angkona</option><option>Tomoni</option>
+          <option>Wasuponda</option><option>Baruga</option><option>Burau</option><option>Wotu</option>
+          <option>Tomoni Timur</option><option>Towuti</option>
+        </select>
+      </div>
+      <div class="divider"></div>
+      <div class="section-tag">Detail Peralatan</div>
+      <div class="form-group">
+        <label>Nama Peralatan <span class="req">*</span></label>
+        <input type="text" id="b-peralatan" placeholder="Contoh: APAR, Helm, Selang Pemadam...">
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Merk / Type <span class="req">*</span></label>
+          <select id="b-merk">
+            <option value="">-- Pilih Merk --</option>
+            <option>Icom / VHF Transceiver</option><option>Kenwood</option><option>Macino</option>
+            <option>Phoenix / P-6P</option><option>Sintex</option><option>Fodalbet Snake Tong</option>
+            <option>Viva</option><option>Uno</option><option>JJXF</option><option>Lakeland</option>
+            <option>Blue Eagle</option><option>Niosh</option><option>Taffguard</option><option>Tough</option>
+            <option>Highigt Torchit</option><option>Pro Best</option><option>Anti Benturan</option>
+            <option>Aquafast</option><option>Lokal / Pabrikan</option><option>Lain-lainnya</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Jumlah <span class="req">*</span></label>
+          <input type="number" id="b-jumlah" min="1" placeholder="0">
+        </div>
+      </div>
+      <div class="form-group" id="merk-lain-group" style="display:none">
+        <label>Merk / Type Lain-lainnya <span class="req">*</span></label>
+        <input type="text" id="b-merk-lain" placeholder="Isi merk / type yang tidak ada di daftar">
+      </div>
+      <div class="form-group">
+        <label>Tahun Pengadaan <span class="req">*</span></label>
+        <input type="number" id="b-tahun" min="2000" max="2030" placeholder="Contoh: 2024">
+      </div>
+      <div class="form-group">
+        <label>Bukti Pelaporan (Foto)</label>
+        <div class="file-upload" onclick="document.getElementById('b-foto').click()">
+          <div style="font-size:1.8rem">📷</div>
+          <div class="file-upload-text">Klik untuk upload foto barang baru</div>
+          <input type="file" id="b-foto" accept="image/*" onchange="previewImg(this,'b-preview')">
+          <img id="b-preview" class="file-preview">
+        </div>
+      </div>
+      <button class="submit-btn" onclick="submitForm('pendaftaran')">⚡ DAFTARKAN PERALATAN</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== STATS ===== -->
+<div id="stats-screen" class="screen">
+  <div style="padding:1.5rem 1rem 3rem; min-height:100vh;">
+
+    <!-- Header -->
+    <div class="stats-header" style="max-width:960px;margin:0 auto 1.5rem;">
+      <div class="stats-header-left">
+        <button class="back-btn" onclick="showScreen('home')">‹</button>
+        <div>
+          <div class="form-title" style="font-size:1.4rem;">📊 Statistik &amp; Data</div>
+          <div class="form-subtitle">Data real-time · Google Sheets</div>
+        </div>
+      </div>
+      <div class="stats-header-right">
+        <div id="conn-status">
+          <span id="conn-dot"></span>
+          <span id="conn-label">Memeriksa...</span>
+        </div>
+        <div class="stats-actions">
+          <button class="btn-outline" onclick="exportExcel()">📥 <span>Excel</span></button>
+          <button class="btn-outline" onclick="exportPDF()">🖨️ <span>PDF</span></button>
+          <button class="btn-outline" onclick="loadStats()">🔄 <span>Refresh</span></button>
+          <button class="btn-outline" onclick="clearLocalDB()" style="border-color:rgba(255,87,34,0.4);color:#ff5722">🗑️ <span>Reset</span></button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="stats-summary">
+      <div class="stat-card">
+        <div class="stat-label">Peralatan Baru</div>
+        <div class="stat-value" id="stat-baru">—</div>
+        <div class="stat-badge badge-green">Terdaftar</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Laporan Kerusakan</div>
+        <div class="stat-value" id="stat-rusak">—</div>
+        <div class="stat-badge badge-orange">Perlu Tindak</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Pengembalian</div>
+        <div class="stat-value" id="stat-kembali">—</div>
+        <div class="stat-badge badge-green">Selesai</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Total Laporan</div>
+        <div class="stat-value" id="stat-total">—</div>
+        <div class="stat-badge badge-orange">Semua Data</div>
+      </div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="tabs" style="max-width:960px;margin:0 auto 1rem;">
+      <button class="tab-btn active" onclick="switchTab('tab-baru',this)">📋 Inventaris</button>
+      <button class="tab-btn" onclick="switchTab('tab-kerusakan',this)">🔧 Kerusakan</button>
+      <button class="tab-btn" onclick="switchTab('tab-pengembalian',this)">🔄 Pengembalian</button>
+    </div>
+
+    <!-- ── TAB: INVENTARIS ── -->
+    <div id="tab-baru" class="tab-content table-section">
+      <div class="table-toolbar">
+        <div class="search-wrap">
+          <span class="search-icon">🔍</span>
+          <input type="text" id="search-baru" placeholder="Cari peralatan / posko..." oninput="onSearch('baru')">
+        </div>
+        <div class="table-info" id="info-baru">— item</div>
+      </div>
+      <div class="data-table-wrap">
+        <!-- Desktop table -->
+        <div class="table-scroll desktop-table">
+          <table>
+            <thead><tr>
+              <th style="width:44px">#</th>
+              <th>Posko</th>
+              <th>Nama Peralatan</th>
+              <th>Merk / Type</th>
+              <th style="text-align:center">Status</th>
+            </tr></thead>
+            <tbody id="tbody-baru"></tbody>
+          </table>
+        </div>
+        <!-- Mobile card -->
+        <div class="mobile-card" id="mobcard-baru"></div>
+        <!-- Pagination -->
+        <div class="pagination" id="pg-baru"></div>
+      </div>
+    </div>
+
+    <!-- ── TAB: KERUSAKAN ── -->
+    <div id="tab-kerusakan" class="tab-content table-section" style="display:none">
+      <div class="table-toolbar">
+        <div class="search-wrap">
+          <span class="search-icon">🔍</span>
+          <input type="text" id="search-kerusakan" placeholder="Cari peralatan / posko..." oninput="onSearch('kerusakan')">
+        </div>
+        <div class="table-info" id="info-kerusakan">— item</div>
+      </div>
+      <div class="data-table-wrap">
+        <div class="table-scroll desktop-table">
+          <table>
+            <thead><tr>
+              <th style="width:44px">#</th>
+              <th>Tanggal</th>
+              <th>Posko</th>
+              <th>Pelapor</th>
+              <th>Peralatan</th>
+              <th style="text-align:center">Status</th>
+              <th>Tingkat</th>
+              <th style="text-align:center">Jml</th>
+            </tr></thead>
+            <tbody id="tbody-kerusakan"></tbody>
+          </table>
+        </div>
+        <div class="mobile-card" id="mobcard-kerusakan"></div>
+        <div class="pagination" id="pg-kerusakan"></div>
+      </div>
+    </div>
+
+    <!-- ── TAB: PENGEMBALIAN ── -->
+    <div id="tab-pengembalian" class="tab-content table-section" style="display:none">
+      <div class="table-toolbar">
+        <div class="search-wrap">
+          <span class="search-icon">🔍</span>
+          <input type="text" id="search-pengembalian" placeholder="Cari peralatan / posko..." oninput="onSearch('pengembalian')">
+        </div>
+        <div class="table-info" id="info-pengembalian">— item</div>
+      </div>
+      <div class="data-table-wrap">
+        <div class="table-scroll desktop-table">
+          <table>
+            <thead><tr>
+              <th style="width:44px">#</th>
+              <th>Tanggal</th>
+              <th>Posko Peminjam</th>
+              <th>Posko Asal</th>
+              <th>Peralatan</th>
+              <th style="text-align:center">Jml</th>
+              <th>Kondisi</th>
+            </tr></thead>
+            <tbody id="tbody-pengembalian"></tbody>
+          </table>
+        </div>
+        <div class="mobile-card" id="mobcard-pengembalian"></div>
+        <div class="pagination" id="pg-pengembalian"></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- TOAST & LOADING -->
+<div class="toast" id="toast">
+  <div class="toast-icon" id="toast-icon"></div>
+  <div class="toast-msg" id="toast-msg"></div>
+</div>
+<div class="loading-overlay" id="loading"><div class="spinner"></div></div>
+
+<!-- ================================================================ -->
+<script>
+  // ═══════════════════════════════════════════════════════════════
+  // KONFIGURASI
+  // ═══════════════════════════════════════════════════════════════
+  const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwtw0oBHN3yVa9sZKBbDYfX6GheTYpS9WZIW03u1O2IOWJ-Jr8o88a1opxOu2BUWlI-/exec';
+  const isOnline = SCRIPT_URL !== '' && !SCRIPT_URL.includes('YOUR_GOOGLE');
+  const PER_PAGE = 20;
+
+  // ═══════════════════════════════════════════════════════════════
+  // PAGINATION STATE
+  // ═══════════════════════════════════════════════════════════════
+  const PAGE = { baru: 1, kerusakan: 1, pengembalian: 1 };
+  const SEARCH = { baru: '', kerusakan: '', pengembalian: '' };
+
+  // ═══════════════════════════════════════════════════════════════
+  // CLOCK
+  // ═══════════════════════════════════════════════════════════════
+  function updateClock() {
+    const now = new Date();
+    const days = ['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'];
+    const months = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
+    document.getElementById('clock').textContent = now.toTimeString().slice(0,8);
+    document.getElementById('date-display').textContent =
+      `${days[now.getDay()]}, ${now.getDate()} ${months[now.getMonth()]} ${now.getFullYear()}`;
+  }
+  updateClock(); setInterval(updateClock, 1000);
+
+  function setDefaults() {
+    const now = new Date();
+    const d = now.toISOString().slice(0,10), t = now.toTimeString().slice(0,5);
+    ['k-tanggal','p-tanggal'].forEach(id => { const e=document.getElementById(id); if(e) e.value=d; });
+    ['k-waktu','p-waktu'].forEach(id => { const e=document.getElementById(id); if(e) e.value=t; });
+  }
+
+  function showScreen(id) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+    window.scrollTo(0,0);
+    if (id === 'stats-screen') loadStats();
+  }
+
+  document.getElementById('b-merk').addEventListener('change', function() {
+    document.getElementById('merk-lain-group').style.display = this.value==='Lain-lainnya'?'block':'none';
+  });
+
+  function previewImg(input, previewId) {
+    const p = document.getElementById(previewId);
+    if (input.files?.[0]) {
+      const r = new FileReader();
+      r.onload = e => { p.src = e.target.result; p.style.display='block'; };
+      r.readAsDataURL(input.files[0]);
+    }
+  }
+
+  function showToast(msg, type='success') {
+    const t = document.getElementById('toast');
+    document.getElementById('toast-icon').textContent = type==='success'?'✅':'❌';
+    document.getElementById('toast-msg').textContent = msg;
+    t.className = `toast ${type}`; t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 3500);
+  }
+
+  function setLoading(show) { document.getElementById('loading').classList.toggle('show', show); }
+
+  function switchTab(tabId, btn) {
+    document.querySelectorAll('.tab-content').forEach(t => t.style.display='none');
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById(tabId).style.display='block';
+    btn.classList.add('active');
+  }
+
+  function getFormData(type) {
+    const g = id => (document.getElementById(id)||{}).value||'';
+    if (type==='kerusakan') {
+      if (!g('k-tanggal')||!g('k-posko')||!g('k-pelapor')||!g('k-peralatan')||!g('k-status')||!g('k-jumlah')||!g('k-deskripsi')) return null;
+      return { type, tanggal:g('k-tanggal'), waktu:g('k-waktu'), posko:g('k-posko'), pelapor:g('k-pelapor'), peralatan:g('k-peralatan'), status:g('k-status'), tingkat:g('k-tingkat'), jumlah:g('k-jumlah'), deskripsi:g('k-deskripsi'), tindakan:g('k-tindakan') };
+    }
+    if (type==='pengembalian') {
+      if (!g('p-tanggal')||!g('p-petugas-lapor')||!g('p-petugas-terima')||!g('p-posko-pinjam')||!g('p-posko-asal')||!g('p-peralatan')||!g('p-jumlah')||!g('p-kondisi')) return null;
+      return { type, tanggal:g('p-tanggal'), waktu:g('p-waktu'), petugasLapor:g('p-petugas-lapor'), petugasTerima:g('p-petugas-terima'), poskoPinjam:g('p-posko-pinjam'), poskoAsal:g('p-posko-asal'), peralatan:g('p-peralatan'), jumlah:g('p-jumlah'), kondisi:g('p-kondisi') };
+    }
+    if (type==='pendaftaran') {
+      const merkRaw=g('b-merk'); const merk = merkRaw==='Lain-lainnya'?g('b-merk-lain'):merkRaw;
+      if (!g('b-posko')||!g('b-peralatan')||!merkRaw||!g('b-jumlah')||!g('b-tahun')) return null;
+      return { type, posko:g('b-posko'), peralatan:g('b-peralatan'), merk, merkLain:g('b-merk-lain'), jumlah:g('b-jumlah'), satuan:'Unit', tahun:g('b-tahun') };
+    }
+  }
+
+  function fileToBase64(file) {
+    return new Promise((res,rej) => { const r=new FileReader(); r.onload=()=>res(r.result.split(',')[1]); r.onerror=rej; r.readAsDataURL(file); });
+  }
+
+  function resetForm(type) {
+    const ids = {
+      kerusakan:['k-tanggal','k-waktu','k-posko','k-pelapor','k-peralatan','k-status','k-tingkat','k-jumlah','k-deskripsi','k-tindakan'],
+      pengembalian:['p-tanggal','p-waktu','p-petugas-lapor','p-petugas-terima','p-posko-pinjam','p-posko-asal','p-peralatan','p-jumlah','p-kondisi'],
+      pendaftaran:['b-posko','b-peralatan','b-merk','b-jumlah','b-tahun','b-merk-lain'],
+    };
+    ids[type].forEach(id => { const e=document.getElementById(id); if(e) e.value=''; });
+    ['k-preview','p-preview','b-preview'].forEach(id => { const e=document.getElementById(id); if(e) e.style.display='none'; });
+    document.getElementById('merk-lain-group').style.display='none';
+    setDefaults();
+  }
+
+  async function submitForm(type) {
+    const data = getFormData(type);
+    if (!data) { showToast('Harap isi semua field yang wajib diisi!','error'); return; }
+    setLoading(true);
+    data.timestamp = new Date().toLocaleString('id-ID');
+    const fi = document.getElementById(type==='kerusakan'?'k-foto':type==='pengembalian'?'p-foto':'b-foto');
+    if (fi?.files[0]) { data.foto=await fileToBase64(fi.files[0]); data.fotoName=fi.files[0].name; data.fotoType=fi.files[0].type; }
+    const dbKey = type==='pendaftaran'?'pendaftaran':type==='kerusakan'?'kerusakan':'pengembalian';
+    DB[dbKey].push({...data}); _saveLocalDB();
+    if (isOnline) {
+      try {
+        await fetch(SCRIPT_URL, { method:'POST', mode:'no-cors', body:JSON.stringify(data) });
+        setLoading(false); showToast('✅ Data terkirim ke Google Sheets!','success');
+      } catch(e) { setLoading(false); showToast('⚠️ Tersimpan lokal, gagal kirim ke Sheets.','error'); }
+    } else { setLoading(false); showToast('✅ Data berhasil disimpan!','success'); }
+    resetForm(type); renderStats();
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // INVENTARIS DATA
+  // ═══════════════════════════════════════════════════════════════
+  const POSKO_LIST = ['Mako','Kalaena','Angkona','Tomoni','Wasuponda','Baruga','Burau','Wotu','Tomoni Timur','Towuti'];
+  const KODE_POSKO = {'Mako':'MKO','Kalaena':'KLN','Angkona':'AKN','Tomoni':'TMN','Wasuponda':'WSP','Baruga':'BRG','Burau':'BRU','Wotu':'WTU','Tomoni Timur':'TMT','Towuti':'TWI'};
+  const INVENTARIS_DATA = {
+    'Mako':[['Handy Talky','Icom/VHF Transceiver'],['Selang Penyemprot Air 1.5"','Sintex'],['Selang Penyemprot Air 2.5"','Sintex'],['APAR / Alat Pemadam Portable','Phoenix / P-6P'],['Helm Rescue','Anti Benturan'],['Helm Safety','Anti Benturan'],['Pakaian Panas/Lengkap','Macino'],['Pakaian Tahan Panas','Macino'],['Baju Safety Anti Lebah','Lakeland'],['Kaos Tangan Pemadam','Viva'],['Kaos Tangan Rescue','Uno'],['Sarung Tangan Anti Ular','JJXF'],['Sepatu Safety','PHOENIX'],['Senter Kepala','Blue Eagle'],['Senter Penyelamatan','Highigt Torchit'],['Penjepit Ular','Fodalbet Snake Tong'],['Tongkat Ular','Fodalbet'],['Jas Hujan','Lokal'],['Masker Full Face','Lakeland'],['Respirator Masker','Niosh'],['Masker Semprot','Blue Eagle'],['Kacamata Safety','Taffguard'],['Gerinda Mini','Tough'],['Chainsaw / Senso','Lokal'],['Parang/Golok','Lokal'],['Alat Semprot Tawon','Lokal'],['Radio Rig / SSB','Kenwood'],['Refil Filter','Taffguard'],['Lampu Rotari','Sintex'],['Tool Kit Set','Lokal']],
+    'Kalaena':[['Selang Penyemprot Air','Sintex'],['Transportable Water / Pompa Apung','Aquafast'],['Sepatu Safety','Red Cobra'],['APAR / Alat Pemadam Portable','Macino'],['Handy Talky','Harvik'],['Senter Penyelamatan','Macino'],['Penjepit Ular','Phoenix / P-6P'],['Pakaian Safety Anti Lebah','Werwey'],['Pakaian Tahan Panas','Highigt Torchit'],['Baju Anti Panas','Fodalbet Snake'],['Baju Safety Anti Panas','Viva'],['Kaos Tangan Pemadam','Uno'],['Telepon Digital','X-One'],['Helm Rescue','Samsum'],['Parang','Nomex'],['Selang Rubber','Endlessafe 2.5'],['Tongkat Ular','Viva'],['Baju Anti Tawon','Hike More'],['Alat Semprot Tawon','Atra'],['Gerinda Mini','Highigt Torchit'],['Helm Safety','New West'],['Kaos Tangan Rescue','Sos'],['Kaos Tangan Anti Ular','Jjxf'],['Kaos Tangan Safety','Niosh'],['Sarung Tangan Pemadam','Tough'],['Jas Hujan','Catridge'],['Senter Kepala','Taffguard'],['Senter Swat','Blue Eagle'],['Chainsaw / Senso','Lokal'],['Masker Gas Full Face','Lakeland'],['Refil Filter','Pro Best'],['Respirator Masker','Tough'],['Masker Semprot','Niosh'],['Kacamata Safety','Taffguard'],['Tongkat Ular (cadangan)','Fodalbet']],
+    'Angkona':[['Pakaian Panas/Lengkap','Pabrikan (Lokal)'],['Handy Talky','Icom / VHF Transceiver'],['SSB Transportable','Kenwood'],['Helm Fiber','Anti Benturan'],['Selang Penyemprot Air','Sintex'],['Lampu Sirine Tunggal','Strobe Lightbar'],['APAR / Alat Pemadam Portable','Macino'],['Sepatu Safety','PHOENIX / P-6P'],['Telepon On/Off','Harvik'],['Senter Penyelamatan','MIYAKO'],['Penjepit Ular','Nokia'],['Pakaian Safety Anti Lebah','Highigt Torchit'],['Pakaian Tahan Panas','Fodalbet Snake Tong'],['Kaos Tangan Pemadam','Viva'],['Centrifugal Pump','Uno'],['Masker Full Face','Tatsumi'],['Telpon Digital','Samsum'],['Jet Nosel','X-One'],['Lampu Rotary Table','Headle'],['Selang Air 1.5 Inci','Nike More'],['Chainsaw / Sencaw','Ingco'],['Helm Rescue','Tough'],['Kaos Tangan','Cartridge'],['Jas Hujan','Blue Eagle'],['Senter Kepala','Lakeland'],['Mesin Gerinda','Ingco'],['Alat Semprot Tawon','Tough'],['Parang','Lokal'],['Sarung Tangan Pemadam','Viva'],['Respirator Masker','Blue Eagle'],['Masker Semprot','Lakeland'],['Kacamata Safety','Lakeland'],['Sarung Tangan Anti Ular','JJXF']],
+    'Tomoni':[['Selang Penyemprot Air','Sintex / 1.5-30m'],['Handy Talky','Zeki'],['Tool Kit Set','Wipro / 79 PCS'],['Helm Fiber','Jasmar'],['Respirator','Kenwood'],['SSB Transportable','Kenwood'],['Hidran Kebakaran','Macino'],['Tabung APAR','Phoenix / P-6P'],['Senter Kepala','Fiber'],['Senter Penyelamatan','Highigt Torchit'],['Penjepit Ular','Fodalbet Snake Tong'],['Pakaian Safety Anti Lebah','X-One'],['Baju Anti Tawon','IPX3'],['Pakaian Tahan Panas','Viva'],['Pakaian Panas/Lengkap','Jjxf'],['Kaos Tangan Pemadam','Highigt Torchit'],['Tangga Aluminium','New West'],['Parang','Niosh'],['Tongkat Ular','Tough'],['Selang Rubber','Catridge'],['Alat Semprot Tawon','Taffguard'],['Gerinda Mini','Blue Eagle'],['Helm Rescue','Lakeland'],['Kaos Tangan Rescue','Pro Best'],['Kaos Tangan Anti Ular','Frame Retardant'],['Jas Hujan','Oxygen'],['Senter Swat','JJXF'],['Chainsaw / Senso','Eracom'],['Masker Gas Full Face','Tough'],['Sarung Tangan Pemadam','Viva'],['Refil Filter','Taffguard'],['Respirator Masker','Niosh'],['Masker Semprot','Blue Eagle'],['Kacamata Safety','Lakeland'],['SCBA (Alat SAR)','Lokal'],['Tabung Pernapasan','Oxygen'],['Baju Pemadam','JJXF'],['Senter Kepala (Cadangan)','Highigt Torchit'],['Telepon On/Off','Viva'],['Telepon Digital','Uno'],['Baju Safety Anti Panas','Atra'],['Senter Penyelamatan (Cadangan)','Highigt Torchit'],['Tangga Aluminium (Cadangan)','Lokal']],
+    'Wasuponda':[['Handy Talky','Icom/VHF Transceiver'],['Selang Penyemprot Air 1.5"','Sintex'],['Selang Penyemprot Air 2.5"','Sintex'],['APAR / Alat Pemadam Portable','Phoenix / P-6P'],['Helm Rescue','Anti Benturan'],['Helm Safety','Anti Benturan'],['Pakaian Panas/Lengkap','Macino'],['Pakaian Tahan Panas','Macino'],['Baju Safety Anti Lebah','Lakeland'],['Kaos Tangan Pemadam','Viva'],['Kaos Tangan Rescue','Uno'],['Sarung Tangan Anti Ular','JJXF'],['Sepatu Safety','PHOENIX'],['Senter Kepala','Blue Eagle'],['Senter Penyelamatan','Highigt Torchit'],['Penjepit Ular','Fodalbet Snake Tong'],['Tongkat Ular','Fodalbet'],['Jas Hujan','Lokal'],['Masker Full Face','Lakeland'],['Respirator Masker','Niosh'],['Masker Semprot','Blue Eagle'],['Kacamata Safety','Taffguard'],['Gerinda Mini','Tough'],['Chainsaw / Senso','Lokal'],['Parang/Golok','Lokal'],['Alat Semprot Tawon','Lokal'],['Radio Rig / SSB','Kenwood'],['Refil Filter','Taffguard'],['Lampu Rotari','Sintex'],['Tool Kit Set','Lokal']],
+    'Baruga':[['Handy Talky','Icom/VHF Transceiver'],['Unit Transceiver SSB Transportable','Syntax'],['Penjepit Ular','Syntax Unidur'],['Life Jaket','Machino Lianxing'],['Pakaian Safety Anti Lebah','Machino'],['Pakaian Tahan Panas','Suction Hose Spiral'],['Senter Kepala','Kenwood'],['Senter Swat','Fodalbelt Snake Tong'],['Sarung Tangan','Gren'],['Kaos Tangan Pemadam','Viva'],['Kaos Tangan Rescue','Uno'],['Kaos Tangan Anti Ular','JJXF'],['Alat Semprot Tawon','Niken Silen'],['Parang','Lakeland'],['Gerinda Mini','Tough'],['Helm Rescue','Catridge'],['Jas Hujan','Blue Eagle'],['Chainsaw Sedang','Pro Best'],['Kacamata Safety','Gun Nozzle'],['Refil Filter','Taffguard'],['Masker Semprot','Niosh'],['Handgrip Nozel','Erakom'],['Respirator Masker','Smart'],['Full Face Masker','Andlesave'],['Handphone','Lokal'],['Selang 1.5"','Sintex'],['Selang 1.5" x 30m','Sintex'],['Selang 2.5"','Sintex'],['Selang Penghisap Air','Suction Hose']],
+    'Burau':[['Selang Penyemprot Air','Sintex'],['Handy Talky','Red Cobra'],['Alat Pemadam Kebakaran Lain-lain','Icom / VHF Transceiver'],['Pakaian Panas/Lengkap','Water Stride'],['Pakaian Tahan Panas','Pabrikan'],['Baju Safety Anti Panas','Macino'],['Baju Pemadam','Phoenix / 6 kg'],['Baju Anti Tawon','Niosh'],['APAR / Alat Pemadam Portable','Phoenix / 6 kg'],['Respirator','Niosh'],['Penjepit Ular','Fodalbet Snake Tong'],['Pakaian Safety Anti Lebah','Viva'],['Tool Kit Set','Takiro'],['Kaos Tangan Pemadam','Uno'],['Sarung Tangan','Alonco'],['Helm Rescue','X-One'],['Radio Rig','Lakeland'],['Masker Full Face','Tough'],['Selang 1.5"','Blue Eagle'],['Parang Golok','Pro Best'],['Kaos Tangan Anti Ular','JJXF'],['Jas Hujan','Eracom'],['Senter Kepala','Blue Eagle'],['Senter Swat','Sintex'],['Alat Semprot Tawon','Escort'],['Gerinda Mini','Tough'],['Chainsaw / Senso','Lokal'],['Tongkat Ular','Fodalbet'],['Kacamata Safety','Tough'],['Masker Semprot','Niosh'],['Lampu Rotari','Sintex'],['Kaos Tangan Rescue','Uno']],
+    'Wotu':[['Handy Talky','Icom/VHF Transceiver'],['Selang Penyemprot Air 1.5"','Sintex'],['Selang Penyemprot Air 2.5"','Sintex'],['APAR / Alat Pemadam Portable','Phoenix / P-6P'],['Helm Rescue','Anti Benturan'],['Helm Safety','Anti Benturan'],['Pakaian Panas/Lengkap','Macino'],['Pakaian Tahan Panas','Macino'],['Baju Safety Anti Lebah','Lakeland'],['Kaos Tangan Pemadam','Viva'],['Kaos Tangan Rescue','Uno'],['Sarung Tangan Anti Ular','JJXF'],['Sepatu Safety','PHOENIX'],['Senter Kepala','Blue Eagle'],['Senter Penyelamatan','Highigt Torchit'],['Penjepit Ular','Fodalbet Snake Tong'],['Tongkat Ular','Fodalbet'],['Jas Hujan','Lokal'],['Masker Full Face','Lakeland'],['Respirator Masker','Niosh'],['Masker Semprot','Blue Eagle'],['Kacamata Safety','Taffguard'],['Gerinda Mini','Tough'],['Chainsaw / Senso','Lokal'],['Parang/Golok','Lokal'],['Alat Semprot Tawon','Lokal'],['Radio Rig / SSB','Kenwood'],['Refil Filter','Taffguard'],['Lampu Rotari','Sintex'],['Tool Kit Set','Lokal']],
+    'Tomoni Timur':[['Handy Talky','Icom/VHF Transceiver'],['Selang Penyemprot Air 1.5"','Sintex'],['Selang Penyemprot Air 2.5"','Sintex'],['APAR / Alat Pemadam Portable','Phoenix / P-6P'],['Helm Rescue','Anti Benturan'],['Helm Safety','Anti Benturan'],['Pakaian Panas/Lengkap','Macino'],['Pakaian Tahan Panas','Macino'],['Baju Safety Anti Lebah','Lakeland'],['Kaos Tangan Pemadam','Viva'],['Kaos Tangan Rescue','Uno'],['Sarung Tangan Anti Ular','JJXF'],['Sepatu Safety','PHOENIX'],['Senter Kepala','Blue Eagle'],['Senter Penyelamatan','Highigt Torchit'],['Penjepit Ular','Fodalbet Snake Tong'],['Tongkat Ular','Fodalbet'],['Jas Hujan','Lokal'],['Masker Full Face','Lakeland'],['Respirator Masker','Niosh'],['Masker Semprot','Blue Eagle'],['Kacamata Safety','Taffguard'],['Gerinda Mini','Tough'],['Chainsaw / Senso','Lokal'],['Parang/Golok','Lokal'],['Alat Semprot Tawon','Lokal'],['Radio Rig / SSB','Kenwood'],['Refil Filter','Taffguard'],['Lampu Rotari','Sintex'],['Tool Kit Set','Lokal']],
+    'Towuti':[['Handy Talky','Icom/VHF Transceiver'],['Selang Penyemprot Air 1.5"','Sintex'],['Selang Penyemprot Air 2.5"','Sintex'],['APAR / Alat Pemadam Portable','Phoenix / P-6P'],['Helm Rescue','Anti Benturan'],['Helm Safety','Anti Benturan'],['Pakaian Panas/Lengkap','Macino'],['Pakaian Tahan Panas','Macino'],['Baju Safety Anti Lebah','Lakeland'],['Kaos Tangan Pemadam','Viva'],['Kaos Tangan Rescue','Uno'],['Sarung Tangan Anti Ular','JJXF'],['Sepatu Safety','PHOENIX'],['Senter Kepala','Blue Eagle'],['Senter Penyelamatan','Highigt Torchit'],['Penjepit Ular','Fodalbet Snake Tong'],['Tongkat Ular','Fodalbet'],['Jas Hujan','Lokal'],['Masker Full Face','Lakeland'],['Respirator Masker','Niosh'],['Masker Semprot','Blue Eagle'],['Kacamata Safety','Taffguard'],['Gerinda Mini','Tough'],['Chainsaw / Senso','Lokal'],['Parang/Golok','Lokal'],['Alat Semprot Tawon','Lokal'],['Radio Rig / SSB','Kenwood'],['Refil Filter','Taffguard'],['Lampu Rotari','Sintex'],['Tool Kit Set','Lokal']],
+  };
+
+  // Build flat inventaris array once
+  let INVENTARIS_FLAT = [];
+  POSKO_LIST.forEach(posko => {
+    (INVENTARIS_DATA[posko]||[]).forEach((item,i) => {
+      INVENTARIS_FLAT.push({ no: INVENTARIS_FLAT.length+1, posko, item0: item[0], item1: item[1] });
+    });
+  });
+
+  // ═══════════════════════════════════════════════════════════════
+  // LOCAL DB
+  // ═══════════════════════════════════════════════════════════════
+  let DB = { pendaftaran:[], kerusakan:[], pengembalian:[] };
+  function _saveLocalDB() { try { localStorage.setItem('damkar_db', JSON.stringify(DB)); } catch(e){} }
+  function _loadLocalDB() {
+    try {
+      const s = localStorage.getItem('damkar_db');
+      if (s) { const p=JSON.parse(s); DB.pendaftaran=p.pendaftaran||[]; DB.kerusakan=p.kerusakan||[]; DB.pengembalian=p.pengembalian||[]; }
+    } catch(e){}
+  }
+  function clearLocalDB() {
+    if (!confirm('Hapus semua data laporan lokal?\n(Data di Google Sheets tidak terpengaruh)')) return;
+    DB = { pendaftaran:[], kerusakan:[], pengembalian:[] };
+    try { localStorage.removeItem('damkar_db'); } catch(e){}
+    renderStats(); showToast('🗑️ Data lokal berhasil dihapus','success');
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // LOAD STATS
+  // ═══════════════════════════════════════════════════════════════
+  async function loadStats() {
+    ['stat-baru','stat-rusak','stat-kembali','stat-total'].forEach(id => document.getElementById(id).textContent='...');
+    const dot=document.getElementById('conn-dot'), label=document.getElementById('conn-label');
+    if (isOnline) {
+      try {
+        const resp = await fetch(`${SCRIPT_URL}?action=getData`);
+        const data = await resp.json();
+        DB.pendaftaran=data.pendaftaran||[]; DB.kerusakan=data.kerusakan||[]; DB.pengembalian=data.pengembalian||[];
+        dot.style.background='#22c55e'; label.textContent='Terhubung ke Sheets';
+        showToast('✅ Data dimuat dari Google Sheets','success');
+      } catch(e) {
+        dot.style.background='orange'; label.textContent='Gagal sambung Sheets';
+        showToast('⚠️ Gagal memuat Sheets, tampil data lokal','error');
+        _loadLocalDB();
+      }
+    } else {
+      dot.style.background='#6b6b78'; label.textContent='Mode Lokal';
+      _loadLocalDB();
+    }
+    PAGE.baru=1; PAGE.kerusakan=1; PAGE.pengembalian=1;
+    SEARCH.baru=''; SEARCH.kerusakan=''; SEARCH.pengembalian='';
+    ['search-baru','search-kerusakan','search-pengembalian'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
+    renderStats();
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // SEARCH
+  // ═══════════════════════════════════════════════════════════════
+  function onSearch(tab) {
+    SEARCH[tab] = document.getElementById('search-'+tab).value.toLowerCase();
+    PAGE[tab] = 1;
+    renderTable(tab);
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // RENDER STATS (summary cards only)
+  // ═══════════════════════════════════════════════════════════════
+  function renderStats() {
+    document.getElementById('stat-baru').textContent    = INVENTARIS_FLAT.length;
+    document.getElementById('stat-rusak').textContent   = DB.kerusakan.length;
+    document.getElementById('stat-kembali').textContent = DB.pengembalian.length;
+    document.getElementById('stat-total').textContent   = DB.kerusakan.length + DB.pengembalian.length;
+    renderTable('baru');
+    renderTable('kerusakan');
+    renderTable('pengembalian');
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // PAGINATION HELPER
+  // ═══════════════════════════════════════════════════════════════
+  function buildPagination(containerId, tab, currentPage, totalPages) {
+    const wrap = document.getElementById(containerId);
+    if (totalPages <= 1) { wrap.innerHTML=''; return; }
+
+    let btns = '';
+    // Prev
+    btns += `<button class="page-btn nav" onclick="goPage('${tab}',${currentPage-1})" ${currentPage===1?'disabled':''}>‹</button>`;
+
+    const range = [];
+    for (let i=1; i<=totalPages; i++) {
+      if (i===1 || i===totalPages || (i>=currentPage-2 && i<=currentPage+2)) range.push(i);
+      else if (range[range.length-1]!=='...') range.push('...');
+    }
+
+    range.forEach(p => {
+      if (p==='...') btns += `<span class="page-ellipsis">…</span>`;
+      else btns += `<button class="page-btn ${p===currentPage?'active':''}" onclick="goPage('${tab}',${p})">${p}</button>`;
+    });
+
+    // Next
+    btns += `<button class="page-btn nav" onclick="goPage('${tab}',${currentPage+1})" ${currentPage===totalPages?'disabled':''}>›</button>`;
+    wrap.innerHTML = btns;
+  }
+
+  function goPage(tab, page) {
+    PAGE[tab] = page;
+    renderTable(tab);
+    // Scroll to top of tab
+    const el = document.getElementById('tab-'+tab);
+    if (el) el.scrollIntoView({ behavior:'smooth', block:'start' });
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // RENDER TABLE (with pagination + search)
+  // ═══════════════════════════════════════════════════════════════
+  function renderTable(tab) {
+    if (tab === 'baru')          renderBaru();
+    else if (tab === 'kerusakan') renderKerusakan();
+    else if (tab === 'pengembalian') renderPengembalian();
+  }
+
+  /* ── INVENTARIS ── */
+  function renderBaru() {
+    const q = SEARCH.baru;
+    const filtered = q
+      ? INVENTARIS_FLAT.filter(r => r.posko.toLowerCase().includes(q) || r.item0.toLowerCase().includes(q) || r.item1.toLowerCase().includes(q))
+      : INVENTARIS_FLAT;
+
+    const total = filtered.length;
+    const pages = Math.max(1, Math.ceil(total / PER_PAGE));
+    const p = Math.min(PAGE.baru, pages);
+    PAGE.baru = p;
+    const slice = filtered.slice((p-1)*PER_PAGE, p*PER_PAGE);
+
+    document.getElementById('info-baru').textContent =
+      total > 0 ? `${(p-1)*PER_PAGE+1}–${Math.min(p*PER_PAGE,total)} dari ${total} item` : '0 item';
+
+    // Desktop
+    if (slice.length > 0) {
+      document.getElementById('tbody-baru').innerHTML = slice.map((r,i) => `
+        <tr>
+          <td style="text-align:center;color:var(--muted)">${(p-1)*PER_PAGE+i+1}</td>
+          <td><b>${r.posko}</b> <span style="font-size:0.7rem;color:var(--muted);font-family:var(--font-label)">${KODE_POSKO[r.posko]||''}</span></td>
+          <td>${r.item0}</td>
+          <td style="color:var(--muted)">${r.item1}</td>
+          <td style="text-align:center"><span class="badge badge-baru">Aktif</span></td>
+        </tr>`).join('');
+    } else {
+      document.getElementById('tbody-baru').innerHTML =
+        `<tr><td colspan="5"><div class="empty-state"><div class="icon">🔍</div><p>Tidak ada hasil untuk "${q}"</p></div></td></tr>`;
+    }
+
+    // Mobile
+    document.getElementById('mobcard-baru').innerHTML = slice.length > 0
+      ? slice.map((r,i) => `
+        <div class="mob-row">
+          <div class="mob-row-header">
+            <span class="mob-no">#${(p-1)*PER_PAGE+i+1}</span>
+            <span class="badge badge-baru">Aktif</span>
+          </div>
+          <div class="mob-title">${r.item0}</div>
+          <div class="mob-grid" style="margin-top:0.4rem">
+            <div class="mob-item"><label>Posko</label><span>${r.posko}</span></div>
+            <div class="mob-item"><label>Merk</label><span>${r.item1}</span></div>
+          </div>
+        </div>`).join('')
+      : `<div class="empty-state"><div class="icon">🔍</div><p>Tidak ada hasil</p></div>`;
+
+    buildPagination('pg-baru', 'baru', p, pages);
+  }
+
+  /* ── KERUSAKAN ── */
+  function renderKerusakan() {
+    const q = SEARCH.kerusakan;
+    const src = DB.kerusakan;
+    const filtered = q
+      ? src.filter(r => {
+          const posko=(r['Nama Posko']||r.posko||'').toLowerCase();
+          const per=(r['Nama Peralatan']||r.peralatan||'').toLowerCase();
+          const pel=(r['Nama Pelapor']||r.pelapor||'').toLowerCase();
+          return posko.includes(q)||per.includes(q)||pel.includes(q);
+        })
+      : src;
+
+    const total = filtered.length;
+    const pages = Math.max(1, Math.ceil(total / PER_PAGE));
+    const p = Math.min(PAGE.kerusakan, pages);
+    PAGE.kerusakan = p;
+    const slice = filtered.slice((p-1)*PER_PAGE, p*PER_PAGE);
+
+    document.getElementById('info-kerusakan').textContent =
+      total > 0 ? `${(p-1)*PER_PAGE+1}–${Math.min(p*PER_PAGE,total)} dari ${total} laporan` : '0 laporan';
+
+    if (slice.length > 0) {
+      document.getElementById('tbody-kerusakan').innerHTML = slice.map((r,i) => {
+        const st=r['Status Aset']||r.status||'';
+        const cls=st==='RUSAK'?'badge-rusak':st==='HILANG'?'badge-hilang':st==='DIPINJAM'?'badge-dipinjam':'badge-kembali';
+        return `<tr>
+          <td style="text-align:center;color:var(--muted)">${(p-1)*PER_PAGE+i+1}</td>
+          <td style="white-space:nowrap">${r['Tanggal Laporan']||r.tanggal||'—'}</td>
+          <td><b>${r['Nama Posko']||r.posko||'—'}</b></td>
+          <td>${r['Nama Pelapor']||r.pelapor||'—'}</td>
+          <td>${r['Nama Peralatan']||r.peralatan||'—'}</td>
+          <td style="text-align:center"><span class="badge ${cls}">${st||'—'}</span></td>
+          <td>${r['Tingkat Kerusakan']||r.tingkat||'—'}</td>
+          <td style="text-align:center">${r['Jumlah Barang']||r.jumlah||'—'}</td>
+        </tr>`;
+      }).join('');
+    } else {
+      document.getElementById('tbody-kerusakan').innerHTML =
+        total===0 && !q
+          ? `<tr><td colspan="8"><div class="empty-state"><div class="icon">📋</div><p>Belum ada laporan kerusakan</p></div></td></tr>`
+          : `<tr><td colspan="8"><div class="empty-state"><div class="icon">🔍</div><p>Tidak ada hasil untuk "${q}"</p></div></td></tr>`;
+    }
+
+    // Mobile
+    document.getElementById('mobcard-kerusakan').innerHTML = slice.length > 0
+      ? slice.map((r,i) => {
+          const st=r['Status Aset']||r.status||'';
+          const cls=st==='RUSAK'?'badge-rusak':st==='HILANG'?'badge-hilang':st==='DIPINJAM'?'badge-dipinjam':'badge-kembali';
+          return `<div class="mob-row">
+            <div class="mob-row-header">
+              <span class="mob-no">#${(p-1)*PER_PAGE+i+1} · ${r['Tanggal Laporan']||r.tanggal||'—'}</span>
+              <span class="badge ${cls}">${st||'—'}</span>
+            </div>
+            <div class="mob-title">${r['Nama Peralatan']||r.peralatan||'—'}</div>
+            <div class="mob-grid" style="margin-top:0.4rem">
+              <div class="mob-item"><label>Posko</label><span>${r['Nama Posko']||r.posko||'—'}</span></div>
+              <div class="mob-item"><label>Pelapor</label><span>${r['Nama Pelapor']||r.pelapor||'—'}</span></div>
+              <div class="mob-item"><label>Tingkat</label><span>${r['Tingkat Kerusakan']||r.tingkat||'—'}</span></div>
+              <div class="mob-item"><label>Jumlah</label><span>${r['Jumlah Barang']||r.jumlah||'—'}</span></div>
+            </div>
+          </div>`;
+        }).join('')
+      : `<div class="empty-state"><div class="icon">📋</div><p>Belum ada laporan kerusakan</p></div>`;
+
+    buildPagination('pg-kerusakan', 'kerusakan', p, pages);
+  }
+
+  /* ── PENGEMBALIAN ── */
+  function renderPengembalian() {
+    const q = SEARCH.pengembalian;
+    const src = DB.pengembalian;
+    const filtered = q
+      ? src.filter(r => {
+          const pp=(r['Posko Peminjam']||r.poskoPinjam||'').toLowerCase();
+          const pa=(r['Posko Asal Pemilik Aset']||r.poskoAsal||'').toLowerCase();
+          const per=(r['Nama Peralatan']||r.peralatan||'').toLowerCase();
+          return pp.includes(q)||pa.includes(q)||per.includes(q);
+        })
+      : src;
+
+    const total = filtered.length;
+    const pages = Math.max(1, Math.ceil(total / PER_PAGE));
+    const p = Math.min(PAGE.pengembalian, pages);
+    PAGE.pengembalian = p;
+    const slice = filtered.slice((p-1)*PER_PAGE, p*PER_PAGE);
+
+    document.getElementById('info-pengembalian').textContent =
+      total > 0 ? `${(p-1)*PER_PAGE+1}–${Math.min(p*PER_PAGE,total)} dari ${total} laporan` : '0 laporan';
+
+    if (slice.length > 0) {
+      document.getElementById('tbody-pengembalian').innerHTML = slice.map((r,i) => `
+        <tr>
+          <td style="text-align:center;color:var(--muted)">${(p-1)*PER_PAGE+i+1}</td>
+          <td style="white-space:nowrap">${r['Tanggal Pengembalian']||r.tanggal||'—'}</td>
+          <td><b>${r['Posko Peminjam']||r.poskoPinjam||'—'}</b></td>
+          <td>${r['Posko Asal Pemilik Aset']||r.poskoAsal||'—'}</td>
+          <td>${r['Nama Peralatan']||r.peralatan||'—'}</td>
+          <td style="text-align:center">${r['Jumlah Barang']||r.jumlah||'—'}</td>
+          <td>${r['Kondisi Dikembalikan']||r.kondisi||'—'}</td>
+        </tr>`).join('');
+    } else {
+      document.getElementById('tbody-pengembalian').innerHTML =
+        total===0 && !q
+          ? `<tr><td colspan="7"><div class="empty-state"><div class="icon">📋</div><p>Belum ada laporan pengembalian</p></div></td></tr>`
+          : `<tr><td colspan="7"><div class="empty-state"><div class="icon">🔍</div><p>Tidak ada hasil untuk "${q}"</p></div></td></tr>`;
+    }
+
+    // Mobile
+    document.getElementById('mobcard-pengembalian').innerHTML = slice.length > 0
+      ? slice.map((r,i) => `<div class="mob-row">
+          <div class="mob-row-header">
+            <span class="mob-no">#${(p-1)*PER_PAGE+i+1} · ${r['Tanggal Pengembalian']||r.tanggal||'—'}</span>
+            <span style="font-size:0.72rem;color:var(--muted)">${r['Kondisi Dikembalikan']||r.kondisi||'—'}</span>
+          </div>
+          <div class="mob-title">${r['Nama Peralatan']||r.peralatan||'—'}</div>
+          <div class="mob-grid" style="margin-top:0.4rem">
+            <div class="mob-item"><label>Peminjam</label><span>${r['Posko Peminjam']||r.poskoPinjam||'—'}</span></div>
+            <div class="mob-item"><label>Posko Asal</label><span>${r['Posko Asal Pemilik Aset']||r.poskoAsal||'—'}</span></div>
+            <div class="mob-item"><label>Jumlah</label><span>${r['Jumlah Barang']||r.jumlah||'—'}</span></div>
+          </div>
+        </div>`).join('')
+      : `<div class="empty-state"><div class="icon">📋</div><p>Belum ada laporan pengembalian</p></div>`;
+
+    buildPagination('pg-pengembalian', 'pengembalian', p, pages);
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // EXPORT
+  // ═══════════════════════════════════════════════════════════════
+  function exportExcel() {
+    if (isOnline) {
+      fetch(`${SCRIPT_URL}?action=export`).then(r=>r.json()).then(d=>{ if(d.url) window.open(d.url,'_blank'); }).catch(()=>_exportExcelLokal());
+    } else { _exportExcelLokal(); }
+  }
+
+  function _exportExcelLokal() {
+    const now = new Date();
+    const tgl = `${String(now.getDate()).padStart(2,'0')}-${String(now.getMonth()+1).padStart(2,'0')}-${now.getFullYear()}`;
+    let no=1;
+    const rowsInv = POSKO_LIST.map(posko => {
+      const kode=KODE_POSKO[posko];
+      return (INVENTARIS_DATA[posko]||[]).map((item,i)=>
+        `<tr><td>${no++}</td><td>${posko}</td><td>${kode}</td><td>${item[0]}</td><td>${item[1]}</td><td></td><td>Unit</td><td></td><td>Baik</td><td>Aktif</td><td>${kode}-${String(i+1).padStart(3,'0')}</td></tr>`
+      ).join('');
+    }).join('');
+    const rowsBaru = DB.pendaftaran.length ? DB.pendaftaran.map((r,i)=>`<tr><td>${i+1}</td><td>${r.timestamp||''}</td><td>${r.posko||''}</td><td>${KODE_POSKO[r.posko]||''}</td><td>${r.peralatan||''}</td><td>${r.merk||''}</td><td>${r.jumlah||''}</td><td>${r.satuan||'Unit'}</td><td>${r.tahun||''}</td></tr>`).join('') : '<tr><td colspan="9" style="text-align:center;color:#999">Belum ada data</td></tr>';
+    const rowsRusak = DB.kerusakan.length ? DB.kerusakan.map((r,i)=>`<tr><td>${i+1}</td><td>${r.tanggal||''}</td><td>${r.waktu||''}</td><td>${r.posko||''}</td><td>${r.pelapor||''}</td><td>${r.peralatan||''}</td><td>${r.status||''}</td><td>${r.tingkat||''}</td><td>${r.jumlah||''}</td><td>${(r.deskripsi||'').replace(/</g,'&lt;')}</td><td>${(r.tindakan||'').replace(/</g,'&lt;')}</td></tr>`).join('') : '<tr><td colspan="11" style="text-align:center;color:#999">Belum ada data</td></tr>';
+    const rowsKembali = DB.pengembalian.length ? DB.pengembalian.map((r,i)=>`<tr><td>${i+1}</td><td>${r.tanggal||''}</td><td>${r.petugasLapor||''}</td><td>${r.petugasTerima||''}</td><td>${r.poskoPinjam||''}</td><td>${r.poskoAsal||''}</td><td>${r.peralatan||''}</td><td>${r.jumlah||''}</td><td>${r.kondisi||''}</td></tr>`).join('') : '<tr><td colspan="9" style="text-align:center;color:#999">Belum ada data</td></tr>';
+    const totalInv = Object.values(INVENTARIS_DATA).reduce((a,b)=>a+b.length,0);
+    const html=`<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel"><head><meta charset="UTF-8"><!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet><x:Name>Master Inventaris</x:Name><x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions></x:ExcelWorksheet><x:ExcelWorksheet><x:Name>Pendaftaran Baru</x:Name><x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions></x:ExcelWorksheet><x:ExcelWorksheet><x:Name>Kerusakan</x:Name><x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions></x:ExcelWorksheet><x:ExcelWorksheet><x:Name>Pengembalian</x:Name><x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions></x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]--><style>body{font-family:Arial;font-size:11px}th{background:#C0392B;color:white;font-weight:bold;padding:6px 10px;border:1px solid #999;text-align:center}td{padding:5px 8px;border:1px solid #ddd}h2{background:#C0392B;color:white;padding:8px 14px;font-size:13px;margin-top:24px;margin-bottom:0}.sub{background:#2C3E50;color:white;padding:4px 14px;font-size:10px;margin-bottom:10px}</style></head><body>
+<h2>&#128658; DAMKAR — LAPORAN PENDATAAN ASET</h2><div class="sub">Dinas Pemadam Kebakaran Kota Luwu Timur | Diekspor: ${now.toLocaleDateString('id-ID',{weekday:'long',day:'numeric',month:'long',year:'numeric'})}</div>
+<h2>&#128230; MASTER INVENTARIS (${totalInv} item)</h2><table><thead><tr><th>No</th><th>Posko</th><th>Kode</th><th>Nama Peralatan</th><th>Merk/Type</th><th>Jumlah</th><th>Satuan</th><th>Tahun</th><th>Kondisi</th><th>Status</th><th>Kode Aset</th></tr></thead><tbody>${rowsInv}</tbody></table>
+<h2>&#9989; PENDAFTARAN BARU (${DB.pendaftaran.length} entri)</h2><table><thead><tr><th>No</th><th>Timestamp</th><th>Posko</th><th>Kode</th><th>Peralatan</th><th>Merk</th><th>Jumlah</th><th>Satuan</th><th>Tahun</th></tr></thead><tbody>${rowsBaru}</tbody></table>
+<h2>&#128295; KERUSAKAN / KEHILANGAN (${DB.kerusakan.length} entri)</h2><table><thead><tr><th>No</th><th>Tanggal</th><th>Waktu</th><th>Posko</th><th>Pelapor</th><th>Peralatan</th><th>Status</th><th>Tingkat</th><th>Jumlah</th><th>Deskripsi</th><th>Tindakan</th></tr></thead><tbody>${rowsRusak}</tbody></table>
+<h2>&#128260; PENGEMBALIAN ASET (${DB.pengembalian.length} entri)</h2><table><thead><tr><th>No</th><th>Tanggal</th><th>Petugas Lapor</th><th>Petugas Terima</th><th>Posko Peminjam</th><th>Posko Asal</th><th>Peralatan</th><th>Jumlah</th><th>Kondisi</th></tr></thead><tbody>${rowsKembali}</tbody></table>
+</body></html>`;
+    const blob=new Blob([html],{type:'application/vnd.ms-excel;charset=utf-8'});
+    const url=URL.createObjectURL(blob); const a=document.createElement('a');
+    a.href=url; a.download=`DAMKAR_Export_${tgl}.xls`;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
+    showToast('✅ File Excel berhasil didownload!','success');
+  }
+
+  function exportPDF() { window.print(); }
+
+  // ═══════════════════════════════════════════════════════════════
+  // INIT
+  // ═══════════════════════════════════════════════════════════════
+  _loadLocalDB();
+  setDefaults();
+</script>
+</body>
+</html>
